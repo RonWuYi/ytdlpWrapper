@@ -1,16 +1,50 @@
 // const fs = require('fs');
 const socket = io();
 
+let socketId = null;
+
 socket.on('connect', () => {
-console.log('Connected with socket ID:', socket.id);
+    socketId = socket.id;
+    console.log('Connected with socket ID:', socket.id);
 });
+
+let notificationTimeout;
+
+socket.on('message', (msg) => {
+    showNotification(msg);
+});
+
+function showNotification(message, duration = 3000) {
+    const notification = document.getElementById('notification');
+    notification.textContent = message;
+    notification.style.display = 'block';
+    notification.style.opacity = '1';
+
+    // Clear any existing timeout
+    if (notificationTimeout) {
+        clearTimeout(notificationTimeout);
+    }
+
+    // Set a new timeout to hide the notification
+    notificationTimeout = setTimeout(() => {
+        notification.style.opacity = '0';
+        setTimeout(() => {
+            notification.style.display = 'none';
+        }, 500); // Wait for fade out animation to complete
+    }, duration);
+}
 
 // Listen for messages from the server
-socket.on('message', (msg) => {
-alert(msg);
-});
+// socket.on('message', (msg) => {
+//     alert(msg);
+// });
 
-let socketId = null;
+function updateProgressBar(progress) {
+    const progressBar = document.querySelector('.progress-bar-fill');
+    const progressText = document.getElementById('progress-text');
+    progressBar.style.width = `${progress}%`;
+    progressText.textContent = `${progress}%`;
+}
 
 // socket.on('connect', () => {
 //     socketId = socket.id;
@@ -68,6 +102,7 @@ function downloadVideo(formatId) {
     })
     .then(response => response.text())
     .then(data => {
+        console.log(data); // Log the response from the server
         messageElement.textContent = data;
     })
     .catch((error) => {
@@ -123,7 +158,7 @@ function analyzeVideo() {
         
     //     const tableContainer = document.createElement('div');
     //     tableContainer.className = 'table-container';
-       const url = document.getElementById('url').value;
+    const url = document.getElementById('url').value;
     const messageElement = document.getElementById('message');
     const formatsContainer = document.getElementById('formats-container');
     const filterHighRes = document.getElementById('filterHighRes').checked;
@@ -154,8 +189,8 @@ function analyzeVideo() {
         // Update the URL input with the cleaned URL
         document.getElementById('url').value = cleanUrl;
 
-        const tableContainer = document.createElement('div');
-        tableContainer.className = 'table-container';
+        // const tableContainer = document.createElement('div');
+        // tableContainer.className = 'table-container';
         
         const table = document.createElement('table');
         table.innerHTML = `
@@ -191,26 +226,39 @@ function analyzeVideo() {
                 <td><button class="download-btn" onclick="downloadVideo('${format.format_id}')">Download</button></td>
             `;
             
-            if (index >= 10) {
-                row.style.display = 'none';
-            }
+            // if (index >= 5) {
+            //     row.style.display = 'none';
+            // }
         });
         
-        tableContainer.appendChild(table);
-        formatsContainer.appendChild(tableContainer);
+        // tableContainer.appendChild(table);
+        // formatsContainer.appendChild(tableContainer);
         
-        let visibleRows = 10;
-        const totalRows = formats.length;
+        // let visibleRows = 5;
+        // const totalRows = formats.length;
         
-        tableContainer.addEventListener('scroll', function() {
-            if (this.scrollTop + this.clientHeight >= this.scrollHeight - 20) {
-                const remainingRows = Math.min(10, totalRows - visibleRows);
-                for (let i = visibleRows; i < visibleRows + remainingRows; i++) {
-                    tbody.rows[i].style.display = '';
-                }
-                visibleRows += remainingRows;
-            }
-        });
+        // tableContainer.addEventListener('scroll', function() {
+        //     if (this.scrollTop + this.clientHeight >= this.scrollHeight - 20) {
+        //         const remainingRows = Math.min(5, totalRows - visibleRows);
+        //         for (let i = visibleRows; i < visibleRows + remainingRows; i++) {
+        //             tbody.rows[i].style.display = '';
+        //         }
+        //         visibleRows += remainingRows;
+        //     }
+        // });
+        formatsContainer.appendChild(table);
+        
+        // Adjust table container height based on number of rows
+        const tableContainer = document.querySelector('.table-container');
+        const rowHeight = 37; // Approximate height of a row in pixels
+        const headerHeight = 37; // Height of the header row
+        const maxVisibleRows = 5;
+        
+        if (formats.length > maxVisibleRows) {
+            tableContainer.style.height = `${(maxVisibleRows * rowHeight) + headerHeight}px`;
+        } else {
+            tableContainer.style.height = `${(formats.length * rowHeight) + headerHeight}px`;
+        }
     })
     .catch((error) => {
         console.error('Error:', error);

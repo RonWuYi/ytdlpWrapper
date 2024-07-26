@@ -293,7 +293,6 @@ app.post('/analyze', (req, res) => {
 // });
 /* not work version end here */
 
-// /* work version
 
 app.post('/download', (req, res) => {
     const { url, formatId } = req.body;
@@ -303,16 +302,26 @@ app.post('/download', (req, res) => {
         return res.status(400).send('URL and format ID are required');
     }
 
-    const ytdlp = spawn(ytdlpPath, ['-f', formatId, url]);
+    const ytdlp = spawn(ytdlpPath, [
+        '-f', formatId,
+        '--newline',
+        '--progress-template', '%(progress.downloaded_bytes)s/%(progress.total_bytes)s',
+        url
+    ]);
     activeDownloads.set(socketId, { process: ytdlp });
 
     ytdlp.stdout.on('data', (data) => {
-        const output = data.toString();
-        const progressMatch = output.match(/(\d+\.\d+)%/);
+        const output = data.toString().trim();
+        const progressMatch = output.match(/(\d+)\/(\d+)/);
         if (progressMatch) {
-            const progress = parseFloat(progressMatch[1]);
-            io.to(socketId).emit('downloadProgress', { progress });
+            const [, downloaded, total] = progressMatch;
+            const progress = (parseInt(downloaded) / parseInt(total)) * 100;
+            io.to(socketId).emit('downloadProgress', { progress: progress.toFixed(2) });
         }
+    });
+
+    ytdlp.stderr.on('data', (data) => {
+        console.error(`stderr: ${data}`);
     });
 
     ytdlp.on('close', (code) => {
@@ -326,6 +335,41 @@ app.post('/download', (req, res) => {
 
     res.send('Download started');
 });
+
+
+// /* work version
+
+// app.post('/download', (req, res) => {
+//     const { url, formatId } = req.body;
+//     const socketId = req.headers['x-socket-id'];
+    
+//     if (!url || !formatId) {
+//         return res.status(400).send('URL and format ID are required');
+//     }
+
+//     const ytdlp = spawn(ytdlpPath, ['-f', formatId, url]);
+//     activeDownloads.set(socketId, { process: ytdlp });
+
+//     ytdlp.stdout.on('data', (data) => {
+//         const output = data.toString();
+//         const progressMatch = output.match(/(\d+\.\d+)%/);
+//         if (progressMatch) {
+//             const progress = parseFloat(progressMatch[1]);
+//             io.to(socketId).emit('downloadProgress', { progress });
+//         }
+//     });
+
+//     ytdlp.on('close', (code) => {
+//         activeDownloads.delete(socketId);
+//         if (code === 0) {
+//             io.to(socketId).emit('downloadComplete', { message: 'Download completed successfully' });
+//         } else {
+//             io.to(socketId).emit('downloadError', { message: 'Error occurred during download' });
+//         }
+//     });
+
+//     res.send('Download started');
+// });
 
 const treeKill = require('tree-kill');
 

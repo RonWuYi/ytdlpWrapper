@@ -45,10 +45,16 @@
         .update-button:hover {
             background-color: #007B9A;
         }
-        .table-container {
+        /* .table-container {
             max-height: 400px;
             overflow-y: auto;
             margin-top: 1rem;
+        } */
+        .table-container {
+            max-height: 300px;
+            overflow-y: auto;
+            border: 1px solid #ddd;
+            margin-top: 20px;
         }
         .table-container table {
             width: 100%;
@@ -112,6 +118,46 @@
         .cancel-btn:hover {
             background-color: #c82333;
         }
+        
+        #formats-container table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        #formats-container th, #formats-container td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+
+        #formats-container th {
+            position: sticky;
+            top: 0;
+            background-color: #f2f2f2;
+            z-index: 1;
+        }
+
+        #formats-container tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+
+        #formats-container tr:hover {
+            background-color: #f5f5f5;
+        }
+
+        #notification {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: #4CAF50;
+            color: white;
+            padding: 15px;
+            border-radius: 5px;
+            z-index: 1000;
+            transition: opacity 0.5s ease-in-out;
+        }
+
     </style>
 </head>
 <body>
@@ -124,16 +170,22 @@
 
 <div class="container">
     <h1>YouTube Downloader</h1>
+    <div id="notification" style="display: none;"></div>
     <input type="text" id="url" placeholder="Enter YouTube URL">
     <button onclick="analyzeVideo()">Analyze</button>
     <input type="checkbox" id="filterHighRes"> Filter high resolution only
     <p id="message"></p>
-    <div id="formats-container"></div>
+    <!-- <div id="formats-container"></div> -->
+     <!-- <div id="formats-container" style="max-height: 300px; overflow-y: auto;"></div> -->
+    <div class="table-container">
+        <div id="formats-container"></div>
+    </div>
     <div id="progress-container" style="display:none;">
         <div class="progress-bar">
             <span class="progress-bar-fill" style="width: 0%;"></span>
         </div>
-        <div id="progress-text"></div>
+        <!-- <div id="progress-text"></div> -->
+        <div id="progress-text">0%</div>
         <button id="cancel-btn" class="cancel-btn" onclick="cancelDownload()" style="display: none;">Cancel Download</button>
     </div>
     <div class="button-container">
