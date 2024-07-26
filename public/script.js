@@ -44,8 +44,7 @@ socket.on('downloadCancelled', (data) => {
 });
 
 function downloadVideo(formatId) {
-    const url = removeTimeParameter(document.getElementById('url').value);
-    // url = removeTimeParameter(url);
+    const url = document.getElementById('url').value;
     const messageElement = document.getElementById('message');
     const progressContainer = document.getElementById('progress-container');
     const cancelBtn = document.getElementById('cancel-btn');
@@ -99,8 +98,32 @@ function cancelDownload() {
 }
 
 function analyzeVideo() {
-    const url = removeTimeParameter(document.getElementById('url').value);
-    // url = removeTimeParameter(url);
+    // const url = document.getElementById('url').value;
+    // const messageElement = document.getElementById('message');
+    // const formatsContainer = document.getElementById('formats-container');
+    // const filterHighRes = document.getElementById('filterHighRes').checked;
+    
+    // if (!url) {
+    //     messageElement.textContent = 'Please enter a YouTube URL';
+    //     return;
+    // }
+    
+    // messageElement.textContent = 'Analyzing...';
+    // formatsContainer.innerHTML = '';
+    
+    // // fetch('/analyze', {
+    // fetch('/analyze', {
+    //     method: 'POST',
+    //     headers: { 'Content-Type': 'application/json' },
+    //     body: JSON.stringify({ url, filterHighRes }),
+    // })
+    // .then(response => response.json())
+    // .then(formats => {
+    //     messageElement.textContent = 'Analysis complete. Click on a download button to start downloading.';
+        
+    //     const tableContainer = document.createElement('div');
+    //     tableContainer.className = 'table-container';
+       const url = document.getElementById('url').value;
     const messageElement = document.getElementById('message');
     const formatsContainer = document.getElementById('formats-container');
     const filterHighRes = document.getElementById('filterHighRes').checked;
@@ -113,16 +136,24 @@ function analyzeVideo() {
     messageElement.textContent = 'Analyzing...';
     formatsContainer.innerHTML = '';
     
-    // fetch('/analyze', {
     fetch('/analyze', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ url, filterHighRes }),
     })
     .then(response => response.json())
-    .then(formats => {
+    .then(data => {
+        if (data.error) {
+            messageElement.textContent = data.error;
+            return;
+        }
+
+        const { formats, cleanUrl } = data;
         messageElement.textContent = 'Analysis complete. Click on a download button to start downloading.';
         
+        // Update the URL input with the cleaned URL
+        document.getElementById('url').value = cleanUrl;
+
         const tableContainer = document.createElement('div');
         tableContainer.className = 'table-container';
         
@@ -203,48 +234,21 @@ function updateYtDlp() {
     });
 }
 
-function removeTimeParameter(url) {
-    // Parse the URL
-    let urlObj = new URL(url);
+// function removeTimeParameter(url) {
+//     // Parse the URL
+//     let urlObj = new URL(url);
     
-    // Get the search parameters
-    let params = urlObj.searchParams;
+//     // Get the search parameters
+//     let params = urlObj.searchParams;
     
-    // Delete the 't' parameter
-    params.delete('t');
+//     // Delete the 't' parameter
+//     params.delete('t');
     
-    // Reconstruct the URL without the 't' parameter
-    return urlObj.toString();
-}
-
-// // Function to download the latest yt-dlp.exe
-// async function downloadLatestYtDlp() {
-//     const releasesUrl = "https://api.github.com/repos/yt-dlp/yt-dlp/releases/latest";
-//     const response = await axios.get(releasesUrl);
-//     const exeAsset = response.data.assets.find(asset => asset.name.endsWith('.exe'));
-
-//     if (exeAsset) {
-//         const writer = fs.createWriteStream(ytdlpPath);
-//         const downloadResponse = await axios({
-//             url: exeAsset.browser_download_url,
-//             method: 'GET',
-//             responseType: 'stream'
-//         });
-//         downloadResponse.data.pipe(writer);
-
-//         return new Promise((resolve, reject) => {
-//             writer.on('finish', resolve);
-//             writer.on('error', reject);
-//         });
-//     } else {
-//         throw new Error("No .exe file found in the latest release.");
-//     }
+//     // Reconstruct the URL without the 't' parameter
+//     return urlObj.toString();
 // }
 
-// // Check and download yt-dlp.exe if it doesn't exist
-// if (!fs.existsSync(ytdlpPath)) {
-//     downloadLatestYtDlp().catch(console.error);
-// }
+
 
 // function sayHello() {
 //     alert("Hello, World!");

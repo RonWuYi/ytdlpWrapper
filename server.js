@@ -3,6 +3,7 @@ const http = require('http');
 const socketIo = require('socket.io');
 const path = require('path');
 const fs = require('fs');
+const axios = require('axios'); // Add this line
 
 const { exec } = require('child_process');
 // const { Server } = require("socket.io");
@@ -44,17 +45,87 @@ server.listen(PORT, () => {
 
 const ytdlpPath = path.join(__dirname, 'yt-dlp.exe');
 
-// ... rest of your server-side code ...
+// Function to download the latest yt-dlp.exe
+async function downloadLatestYtDlp() {
+    const releasesUrl = "https://api.github.com/repos/yt-dlp/yt-dlp/releases/latest";
+    const response = await axios.get(releasesUrl);
+    const exeAsset = response.data.assets.find(asset => asset.name.endsWith('.exe'));
+
+    if (exeAsset) {
+        const writer = fs.createWriteStream(ytdlpPath);
+        const downloadResponse = await axios({
+            url: exeAsset.browser_download_url,
+            method: 'GET',
+            responseType: 'stream'
+        });
+        downloadResponse.data.pipe(writer);
+
+        return new Promise((resolve, reject) => {
+            writer.on('finish', resolve);
+            writer.on('error', reject);
+        });
+    } else {
+        throw new Error("No .exe file found in the latest release.");
+    }
+}
+
+// Check and download yt-dlp.exe if it doesn't exist
+if (!fs.existsSync(ytdlpPath)) {
+    console.log("yt-dlp.exe not found. Downloading the latest version...");
+    downloadLatestYtDlp()
+        .then(() => console.log("yt-dlp.exe downloaded successfully."))
+        .catch(error => console.error("Error downloading yt-dlp.exe:", error));
+}
+
+
+const url = require('url');
+
+// Helper function to validate and clean YouTube URL
+function validateAndCleanYouTubeUrl(inputUrl) {
+    try {
+        const parsedUrl = new URL(inputUrl);
+        const hostname = parsedUrl.hostname;
+
+        // Check if it's a YouTube URL
+        if (!['youtube.com', 'www.youtube.com', 'youtu.be'].includes(hostname)) {
+            return { isValid: false, message: 'Not a valid YouTube URL' };
+        }
+
+        // Remove timestamp
+        parsedUrl.searchParams.delete('t');
+
+        // For short URLs (youtu.be), convert to full youtube.com URL
+        if (hostname === 'youtu.be') {
+            const videoId = parsedUrl.pathname.slice(1);
+            return { 
+                isValid: true, 
+                cleanUrl: `https://www.youtube.com/watch?v=${videoId}` 
+            };
+        }
+
+        return { isValid: true, cleanUrl: parsedUrl.toString() };
+    } catch (error) {
+        return { isValid: false, message: 'Invalid URL format' };
+    }
+}
+
 app.post('/analyze', (req, res) => {
     const { url, filterHighRes } = req.body;
     if (!url) {
-        return res.status(400).send('URL is required');
+        return res.status(400).json({ error: 'URL is required' });
     }
+
+    const urlValidation = validateAndCleanYouTubeUrl(url);
+    if (!urlValidation.isValid) {
+        return res.status(400).json({ error: urlValidation.message });
+    }
+
+    const cleanUrl = urlValidation.cleanUrl;
     
-    exec(`${ytdlpPath} -J ${url}`, (error, stdout, stderr) => {
+    exec(`"${ytdlpPath}" -J ${cleanUrl}`, (error, stdout, stderr) => {
         if (error) {
             console.error(`exec error: ${error}`);
-            return res.status(500).send('Error analyzing video');
+            return res.status(500).json({ error: 'Error analyzing video' });
         }
         try {
             const videoInfo = JSON.parse(stdout);
@@ -75,13 +146,57 @@ app.post('/analyze', (req, res) => {
                 acodec: format.acodec,
                 vcodec: format.vcodec
             }));
-            res.json(formats);
+            res.json({ formats, cleanUrl });
         } catch (parseError) {
             console.error(`Parse error: ${parseError}`);
-            res.status(500).send('Error parsing video information');
+            res.status(500).json({ error: 'Error parsing video information' });
         }
     });
 });
+
+// // Check and download yt-dlp.exe if it doesn't exist
+// if (!fs.existsSync(ytdlpPath)) {
+//     downloadLatestYtDlp().catch(console.error);
+// }
+
+// // ... rest of your server-side code ...
+// app.post('/analyze', (req, res) => {
+//     const { url, filterHighRes } = req.body;
+//     if (!url) {
+//         return res.status(400).send('URL is required');
+//     }
+    
+//     exec(`${ytdlpPath} -J ${url}`, (error, stdout, stderr) => {
+//         if (error) {
+//             console.error(`exec error: ${error}`);
+//             return res.status(500).send('Error analyzing video');
+//         }
+//         try {
+//             const videoInfo = JSON.parse(stdout);
+//             let formats = videoInfo.formats;
+//             if (filterHighRes) {
+//                 formats = formats.filter(format => {
+//                     const [width, height] = (format.resolution || '').split('x').map(Number);
+//                     return width >= 1920 && height >= 1080;
+//                 });
+//             }
+//             formats = formats.map(format => ({
+//                 format_id: format.format_id,
+//                 ext: format.ext,
+//                 resolution: format.resolution,
+//                 fps: format.fps,
+//                 filesize: format.filesize,
+//                 tbr: format.tbr,
+//                 acodec: format.acodec,
+//                 vcodec: format.vcodec
+//             }));
+//             res.json(formats);
+//         } catch (parseError) {
+//             console.error(`Parse error: ${parseError}`);
+//             res.status(500).send('Error parsing video information');
+//         }
+//     });
+// });
 
 /* not work version
 

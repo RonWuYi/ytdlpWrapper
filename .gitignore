@@ -396,4 +396,23 @@ FodyWeavers.xsd
 
 # JetBrains Rider
 *.sln.iml
+
+# Application file
 yt-dlp.exe
+
+# Audio and Video Files
+*.mp3
+*.mp4
+*.m4a
+*.m4b
+*.m4p
+*.m4v
+*.aac
+*.mpg
+*.mpeg
+*.wmv
+*.mov
+*.avi
+*.mkv
+*.flv
+*.webm
