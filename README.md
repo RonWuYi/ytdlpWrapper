@@ -1,8 +1,7 @@
 # ytdlpWrapper
 
-## This is a yt-dlp application wrapper that can download youtube videos using yt-dlp application. It integrated download and update yt-dlp application to latest version function. 
+### This is a yt-dlp application wrapper that can download youtube videos using yt-dlp application. It integrated download and update yt-dlp application to latest version function. 
 
-<h3>
 - [x] Download youtube videos
 - [ ] Cancel download
 - [x] Analyze youtube video before download
@@ -11,7 +10,6 @@
 - [ ] Analyze youtube video via FFmpeg
 - [ ] Split audio from video
 - [ ] Save audio automatically according to video format
-</h3>
 
 
 ### font size example below
