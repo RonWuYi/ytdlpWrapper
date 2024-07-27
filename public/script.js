@@ -77,6 +77,34 @@ socket.on('downloadCancelled', (data) => {
     document.getElementById('cancel-btn').style.display = 'none';
 });
 
+const DOWNLOAD_HISTORY_KEY = 'youtube_download_history';
+
+// Function to save a downloaded link
+function saveDownloadedLink(url) {
+    let history = getDownloadHistory();
+    if (!history.includes(url)) {
+        history.push(url);
+        localStorage.setItem(DOWNLOAD_HISTORY_KEY, JSON.stringify(history));
+    }
+}
+
+// Function to get the download history
+function getDownloadHistory() {
+    const history = localStorage.getItem(DOWNLOAD_HISTORY_KEY);
+    return history ? JSON.parse(history) : [];
+}
+
+// Function to check if a link has been downloaded
+function isLinkDownloaded(url) {
+    return getDownloadHistory().includes(url);
+}
+
+// Function to clear the download history
+function clearDownloadHistory() {
+    localStorage.removeItem(DOWNLOAD_HISTORY_KEY);
+}
+
+/* work version
 function downloadVideo(formatId) {
     const url = document.getElementById('url').value;
     const messageElement = document.getElementById('message');
@@ -109,6 +137,65 @@ function downloadVideo(formatId) {
         console.error('Error:', error);
         messageElement.textContent = 'An error occurred while downloading';
     });
+}
+    work version end
+*/ 
+
+function downloadVideo(formatId) {
+    const url = document.getElementById('url').value;
+    const messageElement = document.getElementById('message');
+    const progressContainer = document.getElementById('progress-container');
+    const cancelBtn = document.getElementById('cancel-btn');
+    
+    if (!url) {
+        messageElement.textContent = 'Please enter a YouTube URL';
+        return;
+    }
+    
+    if (isLinkDownloaded(url)) {
+        if (!confirm('This video has been downloaded before. Do you want to download it again?')) {
+            return;
+        }
+    }
+    
+    messageElement.textContent = 'Downloading...';
+    progressContainer.style.display = 'block';
+    cancelBtn.style.display = 'block';
+    
+    fetch('/download', {
+        method: 'POST',
+        headers: { 
+            'Content-Type': 'application/json',
+            'X-Socket-ID': socketId
+        },
+        body: JSON.stringify({ url, formatId }),
+    })
+    .then(response => response.text())
+    .then(data => {
+        console.log(data); // Log the response from the server
+        saveDownloadedLink(url); // Save the URL to download history
+    })
+    .catch((error) => {
+        console.error('Error:', error);
+        messageElement.textContent = 'An error occurred while downloading';
+    });
+}
+
+function displayDownloadHistory() {
+    const history = getDownloadHistory();
+    const historyElement = document.getElementById('download-history');
+    historyElement.innerHTML = '<h3>Download History</h3>';
+    if (history.length === 0) {
+        historyElement.innerHTML += '<p>No downloads yet.</p>';
+    } else {
+        const ul = document.createElement('ul');
+        history.forEach(url => {
+            const li = document.createElement('li');
+            li.textContent = url;
+            ul.appendChild(li);
+        });
+        historyElement.appendChild(ul);
+    }
 }
 
 function cancelDownload() {

@@ -189,6 +189,15 @@
         <button id="cancel-btn" class="cancel-btn" onclick="cancelDownload()" style="display: none;">Cancel Download</button>
     </div>
     <div class="button-container">
+        <button onclick="displayDownloadHistory()">Show Download History</button>
+    <div id="download-history"></div>
+    
+    </div>
+    <div class="button-container">
+        <button onclick="clearDownloadHistory(); displayDownloadHistory();">Clear History</button>
+    </div>
+
+    <div class="button-container">
         <button onclick="updateYtDlp()" class="update-button">Update yt-dlp</button>
     </div>
 </div>
